@@ -6,11 +6,16 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ScreenContainer } from "@/components/screen-container";
 import { money, products, type Product } from "@/lib/order-domain";
 import { useOrderStore } from "@/lib/order-store";
+import { backorderStateLabel, type ChannelPreference } from "@/lib/backorder-domain";
+import { useBackorderStore } from "@/lib/backorder-store";
 
 const categories = ["All", "Fresh picks", "Bakery", "Pantry", "Chilled"];
 
 export default function HomeScreen() {
   const { cart, addToCart } = useOrderStore();
+  const { subscriptions, registerSubscription } = useBackorderStore();
+  const backorderProductId = "PROD-123";
+  const subscription = subscriptions.find((item) => item.productId === backorderProductId && item.userId === "USER-456" && item.state !== "CANCELLED");
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
 
@@ -95,6 +100,11 @@ one delivery away.</Text>
                 <Text style={styles.heroEmoji}>🛍️</Text>
               </View>
             </View>
+            <View className="mb-5 flex-row items-center justify-between rounded-[22px] border border-[#F3D8D2] bg-[#FFF8F6] p-4">
+              <View className="mr-3 h-11 w-11 items-center justify-center rounded-2xl bg-[#FDE5DF]"><IconSymbol name="bell.fill" size={21} color="#E85D4A" /></View>
+              <View className="flex-1"><Text className="text-[11px] font-bold uppercase tracking-[1px] text-primary">Seasonal Citrus Box</Text><Text className="mt-1 text-[13px] font-semibold text-foreground">Currently out of stock</Text><Text className="mt-1 text-[11px] leading-4 text-muted">We’ll notify you as soon as a restock event arrives.</Text></View>
+              <Pressable disabled={Boolean(subscription)} onPress={() => registerSubscription(backorderProductId, "Seasonal Citrus Box", "PUSH" as ChannelPreference)} style={({ pressed }) => [styles.notifyButton, subscription && styles.notifyButtonActive, pressed && styles.pressed]}><Text className={subscription ? "text-[11px] font-bold text-success" : "text-[11px] font-bold text-primary"}>{subscription ? backorderStateLabel[subscription.state] : "Notify me"}</Text></Pressable>
+            </View>
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-[21px] font-bold text-foreground">Shop essentials</Text>
               <Text className="text-[13px] font-semibold text-primary">{filteredProducts.length} items</Text>
@@ -131,6 +141,8 @@ const styles = StyleSheet.create({
   categoryChipActive: { borderColor: "#E85D4A", backgroundColor: "#E85D4A" },
   cartButton: { height: 45, width: 45, alignItems: "center", justifyContent: "center", borderRadius: 16, backgroundColor: "#FFFFFF", shadowColor: "#22324A", shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
   addButton: { height: 34, width: 34, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "#E85D4A" },
+  notifyButton: { borderRadius: 12, backgroundColor: "#FFF0ED", paddingHorizontal: 10, paddingVertical: 9 },
+  notifyButtonActive: { backgroundColor: "#EAF5EE" },
   searchBox: { height: 50, borderWidth: 1, borderColor: "#E5E7EB" },
   cardShadow: { shadowColor: "#22324A", shadowOpacity: 0.055, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
   heroShadow: { shadowColor: "#22324A", shadowOpacity: 0.18, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 5 },
