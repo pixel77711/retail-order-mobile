@@ -68,3 +68,10 @@
 - [x] Align the package and lockfile dependency versions
 - [x] Verify clean Windows-oriented install and startup commands
 - [ ] Save dependency-fix checkpoint
+
+## Published Windows Dependency Fix
+
+- [ ] Verify GitHub `main` contains the pinned esbuild version
+- [ ] Publish the dependency and lockfile fix to GitHub if missing
+- [ ] Verify a clean install against the published repository
+- [ ] Deliver exact Windows cleanup and launch commands
