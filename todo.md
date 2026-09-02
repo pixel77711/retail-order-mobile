@@ -61,3 +61,10 @@
 - [x] Add VS Code and PowerShell setup guidance
 - [x] Validate Windows-oriented scripts, TypeScript, tests, lint, and build
 - [ ] Save Windows-compatible checkpoint
+
+## Windows Dependency Installation Fix
+
+- [x] Reproduce and inspect the `tsx`/esbuild postinstall version mismatch
+- [x] Align the package and lockfile dependency versions
+- [x] Verify clean Windows-oriented install and startup commands
+- [ ] Save dependency-fix checkpoint
