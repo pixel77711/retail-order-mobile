@@ -57,7 +57,7 @@ After `pnpm dev`, open the Expo web URL printed by Metro. The API health endpoin
 
 If PowerShell blocks a local script, do not bypass security broadly. The package scripts invoke Node and package binaries directly, so normal execution policy should be sufficient. If `pnpm` is not recognized after installation, close and reopen VS Code so the updated PATH is loaded. If port 3000 or 8081 is occupied, set `PORT` or `EXPO_PORT` in the current PowerShell session and rerun the relevant command.
 
-The repository pins `esbuild` to the version required by `tsx`. If an older install still reports `Expected 0.27.2 but got 0.28.2`, rebuild the local dependency tree from the lockfile:
+The repository pins `tsx` to `4.23.13` and `esbuild` to `0.28.2`, which use the same binary version. If an older checkout still reports `Expected 0.27.2 but got 0.28.2`, update the checkout first; if the error persists, rebuild the local dependency tree from the lockfile:
 
 ```powershell
 Remove-Item -Recurse -Force node_modules

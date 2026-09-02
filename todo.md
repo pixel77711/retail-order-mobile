@@ -82,3 +82,10 @@
 - [x] Replace non-Windows user-facing content with Windows equivalents
 - [x] Verify no non-Windows traces remain in the published repository
 - [x] Re-run Windows validation and publish the cleaned branch
+
+## Recurring Node 24 Dependency Mismatch
+
+- [ ] Inspect why tsx receives esbuild 0.28.2 despite the lockfile pin
+- [ ] Enforce the nested tsx/esbuild version explicitly
+- [ ] Verify a clean install under the published dependency policy
+- [ ] Publish the final dependency fix and recovery commands
