@@ -140,7 +140,10 @@ export function registerOAuthRoutes(app: Express) {
       const user = await sdk.authenticateRequest(req);
       res.json({ user: buildUserResponse(user) });
     } catch (error) {
-      console.error("[Auth] /api/auth/me failed:", error);
+      const hasCredentials = Boolean(req.headers.authorization || req.headers.cookie);
+      if (hasCredentials) {
+        console.warn("[Auth] /api/auth/me rejected credentials:", error instanceof Error ? error.message : "unknown error");
+      }
       res.status(401).json({ error: "Not authenticated", user: null });
     }
   });
