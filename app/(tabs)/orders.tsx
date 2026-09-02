@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 
@@ -5,9 +6,23 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ScreenContainer } from "@/components/screen-container";
 import { money, statusLabel } from "@/lib/order-domain";
 import { useOrderStore } from "@/lib/order-store";
+import { useAuth } from "@/hooks/use-auth";
+import { trpc } from "@/lib/trpc";
+import { serverOrderToClientOrder } from "@/lib/order-adapter";
 
 export default function OrdersScreen() {
-  const { orders, activeOrder } = useOrderStore();
+  const { orders, activeOrder, replaceServerOrders } = useOrderStore();
+  const { isAuthenticated } = useAuth();
+  const serverOrdersQuery = trpc.orders.list.useQuery(undefined, { enabled: isAuthenticated, refetchOnWindowFocus: true });
+
+  useEffect(() => {
+    if (!serverOrdersQuery.data?.length) return;
+    replaceServerOrders(serverOrdersQuery.data.map((order) => {
+      const previous = orders.find((item) => item.displayId === order.publicId);
+      return serverOrderToClientOrder(order, previous);
+    }));
+  }, [orders, replaceServerOrders, serverOrdersQuery.data]);
+
   const active = orders.filter((order) => order.status !== "DELIVERED" && order.status !== "CANCELLED");
   const completed = orders.filter((order) => order.status === "DELIVERED");
 

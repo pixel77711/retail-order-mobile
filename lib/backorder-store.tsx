@@ -21,6 +21,7 @@ type BackorderStoreValue = {
   jobs: NotificationJob[];
   lastRestockEvent?: ItemRestockedEvent;
   registerSubscription: (productId: string, productName: string, channel: ChannelPreference) => BackorderSubscription;
+  adoptServerSubscription: (subscription: BackorderSubscription) => void;
   simulateRestock: (productId: string, quantityAdded: number) => void;
   processNotificationQueue: () => void;
   cancelSubscription: (subscriptionId: string) => void;
@@ -81,6 +82,10 @@ export function BackorderProvider({ children }: { children: ReactNode }) {
       return next;
     };
 
+    const adoptServerSubscription = (subscription: BackorderSubscription) => {
+      setSubscriptions((current) => [subscription, ...current.filter((item) => item.productId !== subscription.productId || item.channelPreference !== subscription.channelPreference)]);
+    };
+
     const simulateRestock = (productId: string, quantityAdded: number) => {
       const event = createItemRestockedEvent(productId, quantityAdded);
       const isDuplicate = lastRestockEvent?.eventId === event.eventId || jobs.some((job) => job.sourceEventId === event.eventId);
@@ -117,7 +122,7 @@ export function BackorderProvider({ children }: { children: ReactNode }) {
       return counts;
     }, { "notifications:push": 0, "notifications:email": 0, "notifications:sms": 0 });
 
-    return { subscriptions, jobs, lastRestockEvent, registerSubscription, simulateRestock, processNotificationQueue, cancelSubscription, queueCounts };
+    return { subscriptions, jobs, lastRestockEvent, registerSubscription, adoptServerSubscription, simulateRestock, processNotificationQueue, cancelSubscription, queueCounts };
   }, [jobs, lastRestockEvent, subscriptions]);
 
   return <BackorderContext.Provider value={value}>{children}</BackorderContext.Provider>;

@@ -1,6 +1,6 @@
 /**
  * Custom environment loader that prioritizes system environment variables
- * over .env file values. This ensures that Manus platform-injected variables
+ * over .env file values. This ensures that runtime-injected variables
  * are not overridden by placeholder values in .env
  */
 import fs from "fs";

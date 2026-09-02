@@ -29,4 +29,19 @@
 - [x] Backorder data model and SQL table schemas in technical specification
 - [x] Mobile out-of-stock product state and subscription action
 - [x] Backorder lifecycle tests
-- [ ] Updated backorder checkpoint and delivery
+- [x] Updated backorder checkpoint and delivery
+
+## Deployment Readiness
+
+- [x] Audit and document demo-only versus production-backed behavior
+- [x] Define server-backed order and backorder API contracts
+- [x] Add production persistence for orders, inventory reservations, and backorder subscriptions
+- [x] Add idempotent order placement and backorder registration endpoints
+- [x] Add secure payment-provider adapter boundary and webhook verification boundary
+- [x] Add event outbox and restock-dispatch processing boundaries
+- [x] Replace critical client actions with server-backed mutations
+- [x] Add environment validation and deployment configuration
+- [x] Add health checks, structured logging, and operational error handling
+- [x] Add deployment and migration runbook
+- [x] Validate production build and automated tests
+- [ ] Save deployment-ready checkpoint

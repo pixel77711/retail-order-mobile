@@ -7,6 +7,8 @@ import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { getReadiness } from "../health";
+import { assertProductionEnv } from "./env";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -28,8 +30,24 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  assertProductionEnv();
   const app = express();
   const server = createServer(app);
+
+  app.use((req, res, next) => {
+    const startedAt = Date.now();
+    res.on("finish", () => {
+      console.log(JSON.stringify({
+        level: "info",
+        event: "http_request",
+        method: req.method,
+        path: req.path,
+        status: res.statusCode,
+        durationMs: Date.now() - startedAt,
+      }));
+    });
+    next();
+  });
 
   // Enable CORS for all routes - reflect the request origin to support credentials
   app.use((req, res, next) => {
@@ -59,7 +77,12 @@ async function startServer() {
   registerOAuthRoutes(app);
 
   app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, timestamp: Date.now() });
+    res.status(200).json({ ok: true, service: "retail-order-api", timestamp: new Date().toISOString() });
+  });
+
+  app.get("/api/ready", async (_req, res) => {
+    const readiness = await getReadiness();
+    res.status(readiness.ok ? 200 : 503).json({ ...readiness, service: "retail-order-api", timestamp: new Date().toISOString() });
   });
 
   app.use(

@@ -6,16 +6,52 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ScreenContainer } from "@/components/screen-container";
 import { money, products, type Product } from "@/lib/order-domain";
 import { useOrderStore } from "@/lib/order-store";
-import { backorderStateLabel, type ChannelPreference } from "@/lib/backorder-domain";
+import { backorderStateLabel } from "@/lib/backorder-domain";
 import { useBackorderStore } from "@/lib/backorder-store";
+import { useAuth } from "@/hooks/use-auth";
+import { trpc } from "@/lib/trpc";
 
 const categories = ["All", "Fresh picks", "Bakery", "Pantry", "Chilled"];
 
 export default function HomeScreen() {
   const { cart, addToCart } = useOrderStore();
-  const { subscriptions, registerSubscription } = useBackorderStore();
+  const { subscriptions, registerSubscription, adoptServerSubscription } = useBackorderStore();
+  const { isAuthenticated } = useAuth();
+  const registerBackorderMutation = trpc.backorders.register.useMutation();
+  const [notifySubmitting, setNotifySubmitting] = useState(false);
   const backorderProductId = "PROD-123";
-  const subscription = subscriptions.find((item) => item.productId === backorderProductId && item.userId === "USER-456" && item.state !== "CANCELLED");
+  const subscription = subscriptions.find((item) => item.productId === backorderProductId && item.state !== "CANCELLED");
+
+  const handleNotify = async () => {
+    if (subscription || notifySubmitting) return;
+    setNotifySubmitting(true);
+    try {
+      if (!isAuthenticated) {
+        registerSubscription(backorderProductId, "Seasonal Citrus Box", "PUSH");
+        return;
+      }
+      const serverSubscription = await registerBackorderMutation.mutateAsync({
+        productId: backorderProductId,
+        productName: "Seasonal Citrus Box",
+        channelPreference: "PUSH",
+        idempotencyKey: `backorder-${backorderProductId}-PUSH`,
+      });
+      adoptServerSubscription({
+        id: String(serverSubscription.id),
+        userId: String(serverSubscription.userId),
+        productId: serverSubscription.productId,
+        productName: serverSubscription.productName,
+        channelPreference: serverSubscription.channelPreference,
+        state: serverSubscription.state,
+        createdAt: new Date(serverSubscription.createdAt).toISOString(),
+        notifyingAt: serverSubscription.notifyingAt ? new Date(serverSubscription.notifyingAt).toISOString() : undefined,
+        notifiedAt: serverSubscription.notifiedAt ? new Date(serverSubscription.notifiedAt).toISOString() : undefined,
+        lastError: serverSubscription.lastError ?? undefined,
+      });
+    } finally {
+      setNotifySubmitting(false);
+    }
+  };
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
 
@@ -103,7 +139,7 @@ one delivery away.</Text>
             <View className="mb-5 flex-row items-center justify-between rounded-[22px] border border-[#F3D8D2] bg-[#FFF8F6] p-4">
               <View className="mr-3 h-11 w-11 items-center justify-center rounded-2xl bg-[#FDE5DF]"><IconSymbol name="bell.fill" size={21} color="#E85D4A" /></View>
               <View className="flex-1"><Text className="text-[11px] font-bold uppercase tracking-[1px] text-primary">Seasonal Citrus Box</Text><Text className="mt-1 text-[13px] font-semibold text-foreground">Currently out of stock</Text><Text className="mt-1 text-[11px] leading-4 text-muted">We’ll notify you as soon as a restock event arrives.</Text></View>
-              <Pressable disabled={Boolean(subscription)} onPress={() => registerSubscription(backorderProductId, "Seasonal Citrus Box", "PUSH" as ChannelPreference)} style={({ pressed }) => [styles.notifyButton, subscription && styles.notifyButtonActive, pressed && styles.pressed]}><Text className={subscription ? "text-[11px] font-bold text-success" : "text-[11px] font-bold text-primary"}>{subscription ? backorderStateLabel[subscription.state] : "Notify me"}</Text></Pressable>
+              <Pressable disabled={Boolean(subscription) || notifySubmitting} onPress={handleNotify} style={({ pressed }) => [styles.notifyButton, subscription && styles.notifyButtonActive, pressed && styles.pressed]}><Text className={subscription ? "text-[11px] font-bold text-success" : "text-[11px] font-bold text-primary"}>{subscription ? backorderStateLabel[subscription.state] : notifySubmitting ? "Saving…" : "Notify me"}</Text></Pressable>
             </View>
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-[21px] font-bold text-foreground">Shop essentials</Text>

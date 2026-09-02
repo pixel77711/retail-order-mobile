@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 
@@ -5,10 +6,45 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ScreenContainer } from "@/components/screen-container";
 import { money, statusLabel } from "@/lib/order-domain";
 import { useOrderStore } from "@/lib/order-store";
+import { useAuth } from "@/hooks/use-auth";
+import { trpc } from "@/lib/trpc";
+import { serverOrderToClientOrder } from "@/lib/order-adapter";
 
 export default function OrderDetailScreen() {
-  const { activeOrder, confirmDelivery, advanceOrder } = useOrderStore();
+  const { activeOrder, confirmDelivery, advanceOrder, adoptServerOrder } = useOrderStore();
+  const { isAuthenticated } = useAuth();
+  const advanceMutation = trpc.orders.advance.useMutation();
+  const confirmMutation = trpc.orders.confirmDelivery.useMutation();
+  const [actionError, setActionError] = useState<string | null>(null);
   const delivered = activeOrder.status === "DELIVERED";
+
+  const handleAdvance = async () => {
+    setActionError(null);
+    if (!isAuthenticated) {
+      advanceOrder();
+      return;
+    }
+    try {
+      const serverOrder = await advanceMutation.mutateAsync({ publicId: activeOrder.displayId });
+      if (serverOrder) adoptServerOrder(serverOrderToClientOrder(serverOrder, activeOrder));
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "The dispatch service could not update this order.");
+    }
+  };
+
+  const handleConfirmDelivery = async () => {
+    setActionError(null);
+    if (!isAuthenticated) {
+      confirmDelivery();
+      return;
+    }
+    try {
+      const serverOrder = await confirmMutation.mutateAsync({ publicId: activeOrder.displayId });
+      if (serverOrder) adoptServerOrder(serverOrderToClientOrder(serverOrder, activeOrder));
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "The delivery confirmation could not be saved.");
+    }
+  };
   const rider = activeOrder.rider;
 
   return (
@@ -36,8 +72,9 @@ export default function OrderDetailScreen() {
 
         <View className="mt-6 rounded-[23px] bg-surface p-5" style={styles.cardShadow}><Text className="mb-4 text-[17px] font-bold text-foreground">Order summary</Text>{activeOrder.lines.map((line) => <View key={line.id} className="mb-3 flex-row justify-between"><Text className="flex-1 text-[13px] text-muted">{line.quantity} × {line.name}</Text><Text className="text-[13px] font-semibold text-foreground">{money(line.price * line.quantity)}</Text></View>)}<View className="mt-1 h-px bg-border" /><View className="mt-4 flex-row justify-between"><Text className="text-[15px] font-bold text-foreground">Total paid</Text><Text className="text-[17px] font-bold text-primary">{money(activeOrder.total)}</Text></View></View>
 
-        {!delivered && activeOrder.status === "OUT_FOR_DELIVERY" && <Pressable onPress={confirmDelivery} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text className="text-[15px] font-bold text-white">Confirm delivery</Text><IconSymbol name="checkmark.circle.fill" size={19} color="#FFFFFF" /></Pressable>}
-        {!delivered && activeOrder.status !== "OUT_FOR_DELIVERY" && <Pressable onPress={advanceOrder} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text className="text-[15px] font-bold text-white">Advance dispatch simulation</Text><IconSymbol name="arrow.up.right" size={18} color="#FFFFFF" /></Pressable>}
+        {actionError && <Text className="mt-4 text-center text-[12px] font-semibold text-error">{actionError}</Text>}
+        {!delivered && activeOrder.status === "OUT_FOR_DELIVERY" && <Pressable disabled={confirmMutation.isPending} onPress={handleConfirmDelivery} style={({ pressed }) => [styles.primaryButton, (confirmMutation.isPending || advanceMutation.isPending) && { opacity: 0.55 }, pressed && styles.pressed]}><Text className="text-[15px] font-bold text-white">{confirmMutation.isPending ? "Saving delivery…" : "Confirm delivery"}</Text><IconSymbol name="checkmark.circle.fill" size={19} color="#FFFFFF" /></Pressable>}
+        {!delivered && activeOrder.status !== "OUT_FOR_DELIVERY" && <Pressable disabled={advanceMutation.isPending} onPress={handleAdvance} style={({ pressed }) => [styles.primaryButton, advanceMutation.isPending && { opacity: 0.55 }, pressed && styles.pressed]}><Text className="text-[15px] font-bold text-white">{advanceMutation.isPending ? "Updating dispatch…" : "Advance dispatch step"}</Text><IconSymbol name="arrow.up.right" size={18} color="#FFFFFF" /></Pressable>}
         {delivered && <View className="mt-6 items-center rounded-[22px] border border-[#BEE3D1] bg-[#F1FAF5] px-4 py-4"><Text className="text-[14px] font-bold text-success">Delivery confirmed</Text><Text className="mt-1 text-center text-[12px] text-[#4C796A]">Notification Engine recorded the completion event for your order.</Text></View>}
       </ScrollView>
     </ScreenContainer>

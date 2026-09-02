@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 
@@ -5,9 +6,30 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { ScreenContainer } from "@/components/screen-container";
 import { lifecycle, statusLabel } from "@/lib/order-domain";
 import { useOrderStore, statusProgress } from "@/lib/order-store";
+import { useAuth } from "@/hooks/use-auth";
+import { trpc } from "@/lib/trpc";
+import { serverOrderToClientOrder } from "@/lib/order-adapter";
 
 export default function OrderProcessingScreen() {
-  const { activeOrder, advanceOrder } = useOrderStore();
+  const { activeOrder, advanceOrder, adoptServerOrder } = useOrderStore();
+  const { isAuthenticated } = useAuth();
+  const advanceMutation = trpc.orders.advance.useMutation();
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const handleAdvance = async () => {
+    if (advanceMutation.isPending) return;
+    setActionError(null);
+    if (!isAuthenticated) {
+      advanceOrder();
+      return;
+    }
+    try {
+      const serverOrder = await advanceMutation.mutateAsync({ publicId: activeOrder.displayId });
+      if (serverOrder) adoptServerOrder(serverOrderToClientOrder(serverOrder, activeOrder));
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "The fulfillment service could not advance this order.");
+    }
+  };
   const nextStep = lifecycle.find((item) => item.status !== activeOrder.status && !activeOrder.events.some((event) => event.status === item.status));
   const isComplete = activeOrder.status === "DELIVERED";
   const progress = statusProgress(activeOrder.status);
@@ -42,7 +64,8 @@ export default function OrderProcessingScreen() {
 
         {!isComplete ? <>
           <View className="mt-6 rounded-[20px] border border-[#F6D9D3] bg-[#FFF8F6] px-4 py-4"><View className="flex-row items-start"><IconSymbol name="bell.fill" size={20} color="#E85D4A" /><View className="ml-3 flex-1"><Text className="text-[14px] font-bold text-foreground">Next event ready</Text><Text className="mt-1 text-[12px] leading-5 text-muted">{nextStep ? `${nextStep.service} will emit ${nextStep.type}.` : "The workflow is ready for the next service."}</Text></View></View></View>
-          <Pressable onPress={advanceOrder} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text className="text-[15px] font-bold text-white">Run next service step</Text><IconSymbol name="arrow.up.right" size={18} color="#FFFFFF" /></Pressable>
+          {actionError && <Text className="mt-3 text-center text-[12px] font-semibold text-error">{actionError}</Text>}
+          <Pressable disabled={advanceMutation.isPending} onPress={handleAdvance} style={({ pressed }) => [styles.primaryButton, advanceMutation.isPending && { opacity: 0.55 }, pressed && styles.pressed]}><Text className="text-[15px] font-bold text-white">{advanceMutation.isPending ? "Updating service…" : "Run next service step"}</Text><IconSymbol name="arrow.up.right" size={18} color="#FFFFFF" /></Pressable>
         </> : <Pressable onPress={() => router.replace("/order-detail" as any)} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}><Text className="text-[15px] font-bold text-primary">View delivery details</Text><IconSymbol name="chevron.right" size={18} color="#E85D4A" /></Pressable>}
       </ScrollView>
     </ScreenContainer>

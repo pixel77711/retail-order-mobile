@@ -22,6 +22,8 @@ type OrderStoreValue = {
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   placeOrder: () => Order;
+  adoptServerOrder: (order: Order) => void;
+  replaceServerOrders: (orders: Order[]) => void;
   advanceOrder: () => void;
   confirmDelivery: () => void;
   resetDemo: () => void;
@@ -112,6 +114,21 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         setCart([]);
         updateOrder(nextOrder);
         return nextOrder;
+      },
+      adoptServerOrder: (order) => {
+        setCart([]);
+        updateOrder(order);
+      },
+      replaceServerOrders: (serverOrders) => {
+        if (!serverOrders.length) return;
+        setOrders((current) => {
+          const unchanged = current.length === serverOrders.length && current.every((order, index) => order.id === serverOrders[index]?.id && order.status === serverOrders[index]?.status);
+          return unchanged ? current : serverOrders;
+        });
+        setActiveOrder((current) => {
+          const next = serverOrders.find((order) => order.id === current.id) ?? serverOrders[0];
+          return current.id === next.id && current.status === next.status ? current : next;
+        });
       },
       advanceOrder: () => {
         const nextStatus = nextLifecycleStatus(activeOrder.status);

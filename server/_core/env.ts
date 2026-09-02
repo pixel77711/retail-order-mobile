@@ -8,3 +8,15 @@ export const ENV = {
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
 };
+
+export function assertProductionEnv() {
+  if (!ENV.isProduction) return;
+  const required = [
+    ["DATABASE_URL", ENV.databaseUrl],
+    ["JWT_SECRET", ENV.cookieSecret],
+    ["VITE_APP_ID", ENV.appId],
+    ["OAUTH_SERVER_URL", ENV.oAuthServerUrl],
+  ] as const;
+  const missing = required.filter(([, value]) => !value.trim()).map(([name]) => name);
+  if (missing.length) throw new Error(`Missing required production configuration: ${missing.join(", ")}`);
+}
