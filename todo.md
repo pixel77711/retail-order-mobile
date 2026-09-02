@@ -56,22 +56,29 @@
 
 ## Windows Development Compatibility
 
-- [x] Remove Unix-only environment expansion from Expo startup scripts
+- [x] Remove shell-specific environment expansion from Expo startup scripts
 - [x] Add Windows-friendly Metro launcher and environment validation
 - [x] Add VS Code and PowerShell setup guidance
 - [x] Validate Windows-oriented scripts, TypeScript, tests, lint, and build
-- [ ] Save Windows-compatible checkpoint
+- [x] Save Windows-compatible checkpoint
 
 ## Windows Dependency Installation Fix
 
 - [x] Reproduce and inspect the `tsx`/esbuild postinstall version mismatch
 - [x] Align the package and lockfile dependency versions
 - [x] Verify clean Windows-oriented install and startup commands
-- [ ] Save dependency-fix checkpoint
+- [x] Save dependency-fix checkpoint
 
 ## Published Windows Dependency Fix
 
-- [ ] Verify GitHub `main` contains the pinned esbuild version
-- [ ] Publish the dependency and lockfile fix to GitHub if missing
-- [ ] Verify a clean install against the published repository
-- [ ] Deliver exact Windows cleanup and launch commands
+- [x] Verify GitHub `main` contains the pinned esbuild version
+- [x] Publish the dependency and lockfile fix to GitHub if missing
+- [x] Verify a clean install against the published repository
+- [x] Deliver exact Windows cleanup and launch commands
+
+## Windows-Only Repository Cleanup
+
+- [x] Audit current files and GitHub main for non-Windows paths, commands, and documentation
+- [x] Replace non-Windows user-facing content with Windows equivalents
+- [x] Verify no non-Windows traces remain in the published repository
+- [x] Re-run Windows validation and publish the cleaned branch

@@ -36,7 +36,7 @@ In development, missing API variables produce a warning so the local preview can
 
 ## Start commands
 
-The following commands work from PowerShell, Command Prompt, or the integrated VS Code terminal because they delegate environment handling to Node.js or `cross-env` rather than relying on Unix shell expansion.
+The following commands work from PowerShell, Command Prompt, or the integrated VS Code terminal because they delegate environment handling to Node.js or `cross-env` rather than relying on shell-specific environment expansion.
 
 | Goal | Command |
 |---|---|
