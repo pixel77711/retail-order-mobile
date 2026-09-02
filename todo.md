@@ -53,3 +53,11 @@
 - [x] Verify mobile order and backorder flows after fixes
 - [x] Re-run the complete validation suite
 - [x] Save corrected checkpoint
+
+## Windows Development Compatibility
+
+- [x] Remove Unix-only environment expansion from Expo startup scripts
+- [x] Add Windows-friendly Metro launcher and environment validation
+- [x] Add VS Code and PowerShell setup guidance
+- [x] Validate Windows-oriented scripts, TypeScript, tests, lint, and build
+- [ ] Save Windows-compatible checkpoint
